@@ -1,14 +1,25 @@
 class Wwkg < Formula
   desc "World Wide Knowledge Graph CLI"
   homepage "https://wwkg.io"
-  url "https://github.com/dataroadinc/wwkg/archive/refs/tags/v0.9.0.tar.gz"
-  sha256 "0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+  version "0.9.0"
   license "Proprietary"
 
-  depends_on "rust" => :build
+  on_macos do
+    on_arm do
+      url "https://wwkg.io/release/0.9.0/wwkg-0.9.0-darwin-aarch64.tar.gz"
+      sha256 "27bf4e36525fea901c1489befd26f3a52dd1a02319e476d729b56c75694f68b8"
+    end
+  end
+
+  on_linux do
+    on_intel do
+      url "https://wwkg.io/release/0.9.0/wwkg-0.9.0-linux-x86_64.tar.gz"
+      sha256 "7cf90055b5e58d9b746fdef4ac982d0e559be3bab716a46d4973d097be102b28"
+    end
+  end
 
   def install
-    system "cargo", "install", "--path", "crates/wwkg", *std_cargo_args
+    bin.install "wwkg"
   end
 
   test do
