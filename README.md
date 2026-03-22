@@ -5,15 +5,22 @@
 [![Formula](https://img.shields.io/badge/formula-wwkg-1f6feb)](https://github.com/dataroadinc/homebrew-wwkg/blob/main/Formula/wwkg.rb)
 [![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)](./LICENSE)
 
-Homebrew tap for installing `wwkg`, the World Wide Knowledge Graph CLI.
-WWKG is a distributed graph database with SPARQL, Cypher, and GQL support.
+Homebrew tap for [WWKG](https://wwkg.io), the World Wide Knowledge Graph — a
+peer-to-peer graph database with SPARQL, Cypher, and GQL support.
 
-Learn more at [wwkg.io](https://wwkg.io).
+Installs all three binaries: `wwkg` (CLI), `wwkg-node` (daemon), and `wwkg-gateway` (P2P gateway).
 
 ## Install
 
 ```bash
 brew install dataroadinc/wwkg/wwkg
+```
+
+After installation, start the node and gateway:
+
+```bash
+wwkg node start
+wwkg gateway start
 ```
 
 ## Upgrade
