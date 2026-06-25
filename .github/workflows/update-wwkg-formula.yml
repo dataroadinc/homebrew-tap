@@ -1,0 +1,96 @@
+name: Update wwkg formula
+
+on:
+  repository_dispatch:
+    types: [update-formula]
+
+permissions:
+  contents: write
+
+jobs:
+  update-formula:
+    name: Render and commit wwkg.rb
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out tap
+        uses: actions/checkout@v6
+
+      - name: Render formula
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+          DARWIN_AARCH64: ${{ github.event.client_payload.darwin_aarch64_sha256 }}
+          LINUX_X86_64: ${{ github.event.client_payload.linux_x86_64_sha256 }}
+          LINUX_AARCH64: ${{ github.event.client_payload.linux_aarch64_sha256 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VERSION:-}" ]; then
+            echo "::error::client_payload.version is empty"; exit 1
+          fi
+          base="https://releases.wwkg.io/builds/$VERSION"
+          cat > Formula/wwkg.rb <<RUBY_EOF
+          class Wwkg < Formula
+            desc "World Wide Knowledge Graph — peer-to-peer graph database"
+            homepage "https://wwkg.io"
+            version "$VERSION"
+            license "Proprietary"
+
+            on_macos do
+              # Apple Silicon only — Intel Macs use Rosetta 2
+              url "$base/wwkg-$VERSION-darwin-aarch64.tar.gz"
+              sha256 "$DARWIN_AARCH64"
+            end
+
+            on_linux do
+              on_intel do
+                url "$base/wwkg-$VERSION-linux-x86_64.tar.gz"
+                sha256 "$LINUX_X86_64"
+              end
+              on_arm do
+                url "$base/wwkg-$VERSION-linux-aarch64.tar.gz"
+                sha256 "$LINUX_AARCH64"
+              end
+            end
+
+            def install
+              bin.install "wwkg"
+              bin.install "wwkg-node"
+              bin.install "wwkg-gateway"
+            end
+
+            def post_install
+              system bin/"wwkg", "install", "--all", "--user", "--no-start"
+            end
+
+            def caveats
+              <<~EOS
+                To start the WWKG node and gateway:
+                  wwkg node start
+                  wwkg gateway start
+              EOS
+            end
+
+            test do
+              assert_match "WWKG", shell_output("#{bin}/wwkg --help")
+              assert_match version.to_s.split(".")[0..2].join("."),
+                           shell_output("#{bin}/wwkg-node version")
+              assert_match version.to_s.split(".")[0..2].join("."),
+                           shell_output("#{bin}/wwkg-gateway version")
+            end
+          end
+          RUBY_EOF
+          echo "Rendered Formula/wwkg.rb for v$VERSION"
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ github.event.client_payload.version }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- Formula/wwkg.rb; then
+            echo "Formula already up to date for v$VERSION."
+            exit 0
+          fi
+          git add Formula/wwkg.rb
+          git commit -m "feat: update wwkg formula to v$VERSION"
+          git push
